@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg
+*.eggs
+*.whl
+build/
+dist/
+*.egg-info/
+
+# Environment
+.env
+venv/
+ENV/
+.env.*
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Misc
+*.log
+*.sqlite3
+*.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache/
+
+# Test
+pytest_cache/
+
+# Others
+*.bak
+*.tmp
+
+# Ignore shared cache
+shared/__pycache__/
+agents/**/__pycache__/
