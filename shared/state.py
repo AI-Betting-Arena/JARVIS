@@ -1,3 +1,7 @@
+# DEPRECATED: This module is superseded by shared/base_state.py and
+# agents/issue-creator/state.py. Do not add new fields here.
+# It is kept temporarily while agents/backend-expert/ is still in use.
+# Remove once agents/backend-expert/ is fully decommissioned.
 from typing import TypedDict, Optional, Annotated, List
 import operator
 

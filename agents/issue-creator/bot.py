@@ -1,12 +1,21 @@
+import sys
+from pathlib import Path
+
+# Add project root so shared.* imports resolve
+sys.path.append(str(Path(__file__).parent.parent.parent))
+# Add agent directory so nodes can do `from state import IssueCreatorState`
+sys.path.append(str(Path(__file__).parent))
+
 import discord
 from discord.ext import commands
 import os
 import asyncio
-from main import app  # 네가 만든 LangGraph 컴파일본
+from workflow import app  # LangGraph 컴파일본
 
 # 환경 변수 로드
 DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 TARGET_CHANNEL_NAME = "🚨-incident-alarm"
+
 
 class AgentBot(commands.Bot):
     def __init__(self):
@@ -15,7 +24,7 @@ class AgentBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def on_ready(self):
-        print(f"🤖 Backend Expert Agent 기동 완료: {self.user.name}")
+        print(f"🤖 Issue Creator Agent 기동 완료: {self.user.name}")
         await self.process_missed_alarms()
 
     def _extract_log_from_embed(self, message):
@@ -39,7 +48,8 @@ class AgentBot(commands.Bot):
     async def process_missed_alarms(self):
         """봇이 꺼져있을 때 올라온 미처리 알림 소급 처리"""
         channel = discord.utils.get(self.get_all_channels(), name=TARGET_CHANNEL_NAME)
-        if not channel: return
+        if not channel:
+            return
 
         print("🔍 미처리 알림 스캔 중...")
         async for message in channel.history(limit=50):
@@ -58,7 +68,7 @@ class AgentBot(commands.Bot):
     async def run_agent_workflow(self, message):
         """LangGraph 실행 및 결과 반영"""
         print(f"🚀 워크플로우 실행 시작 (Msg ID: {message.id})")
-        
+
         # 1. 초기 상태 설정
         raw_log = self._extract_log_from_embed(message)
         if not raw_log:
@@ -77,8 +87,9 @@ class AgentBot(commands.Bot):
         loop = asyncio.get_event_loop()
         final_state = await loop.run_in_executor(None, lambda: app.invoke(inputs))
 
-        from nodes.discord_ui import discord_ui_node
+        from nodes.notify import discord_ui_node
         await discord_ui_node(final_state, self)
+
 
 if __name__ == "__main__":
     bot = AgentBot()
