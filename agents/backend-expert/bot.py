@@ -18,6 +18,24 @@ class AgentBot(commands.Bot):
         print(f"🤖 Backend Expert Agent 기동 완료: {self.user.name}")
         await self.process_missed_alarms()
 
+    def _extract_log_from_embed(self, message):
+        """Embed의 'Message' 필드에서 로그 텍스트 추출, 없으면 message.content로 폴백"""
+        if message.embeds:
+            embed = message.embeds[0]
+            for field in embed.fields:
+                if field.name == "Message":
+                    return field.value
+        return message.content
+
+    async def _bot_already_reacted(self, message):
+        """이 봇이 ✅ 또는 ⏭️ 반응을 이미 달았는지 확인"""
+        for reaction in message.reactions:
+            if reaction.emoji in ('✅', '⏭️'):
+                async for user in reaction.users():
+                    if user == self.user:
+                        return True
+        return False
+
     async def process_missed_alarms(self):
         """봇이 꺼져있을 때 올라온 미처리 알림 소급 처리"""
         channel = discord.utils.get(self.get_all_channels(), name=TARGET_CHANNEL_NAME)
@@ -25,11 +43,8 @@ class AgentBot(commands.Bot):
 
         print("🔍 미처리 알림 스캔 중...")
         async for message in channel.history(limit=50):
-            # TODO: AND가 이게 맞나?
-            if message.author.bot and not any(r.emoji == '✅' for r in message.reactions):
-                # ⏭️(스킵) 표시도 없는 경우에만 처리
-                if not any(r.emoji == '⏭️' for r in message.reactions):
-                    await self.run_agent_workflow(message)
+            if message.author.bot and not await self._bot_already_reacted(message):
+                await self.run_agent_workflow(message)
 
     async def on_message(self, message):
         # 본인이 쏜 메시지에는 반응하지 않음 (무한 루프 방지)
@@ -45,10 +60,15 @@ class AgentBot(commands.Bot):
         print(f"🚀 워크플로우 실행 시작 (Msg ID: {message.id})")
         
         # 1. 초기 상태 설정
+        raw_log = self._extract_log_from_embed(message)
+        if not raw_log:
+            print(f"⚠️ 로그 텍스트 없음, 스킵 (Msg ID: {message.id})")
+            return
+
         inputs = {
             "message_id": message.id,
             "channel_id": message.channel.id,
-            "raw_log": message.content,
+            "raw_log": raw_log,
             "logs": []
         }
 
