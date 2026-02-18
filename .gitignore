@@ -51,3 +51,7 @@ pytest_cache/
 # Ignore shared cache
 shared/__pycache__/
 agents/**/__pycache__/
+chroma_db
+
+# pr-writer: cached symbol index (auto-generated, do not commit)
+agents/pr-writer/.symbol_index.json
